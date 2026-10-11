@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>咖啡手账</title>
+<meta name="theme-color" content="#16110d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="咖啡手账">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" href="./icons/icon-192.png">
+<style>
+  :root{
+    --bg:#16110d; --card:#241b14; --card2:#2c2118; --line:#3a2c20;
+    --text:#ece4da; --muted:#9c8a77; --accent:#d4a05e; --accent2:#b07c3f;
+    --green:#7fb069; --red:#d47b6a; --blue:#7aa5c4;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    font-size:15px; line-height:1.5;
+    padding-bottom:calc(72px + env(safe-area-inset-bottom));
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+    background:rgba(22,17,13,.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header h1{font-size:18px; margin:0; font-weight:700; letter-spacing:.5px;}
+  header .sub{font-size:12px; color:var(--muted);}
+  main{padding:14px 14px 20px; max-width:560px; margin:0 auto;}
+  .card{background:var(--card); border-radius:16px; padding:14px; margin-bottom:12px; border:1px solid var(--line);}
+  .card h3{margin:0 0 10px; font-size:15px;}
+  .row{display:flex; gap:10px;}
+  .row>*{flex:1; min-width:0;}
+  label{display:block; font-size:12px; color:var(--muted); margin:10px 0 4px;}
+  label:first-child{margin-top:0;}
+  input,select,textarea{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:#1b140f; color:var(--text); font-size:15px; outline:none;
+    font-family:inherit; appearance:none; -webkit-appearance:none;
+  }
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239c8a77' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:32px;}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent2);}
+  textarea{resize:vertical; min-height:64px;}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:11px 16px; border-radius:12px; border:none; cursor:pointer;
+    background:var(--accent); color:#241505; font-size:15px; font-weight:600;
+    width:100%; font-family:inherit;
+  }
+  .btn:active{opacity:.85;}
+  .btn-ghost{background:transparent; color:var(--accent); border:1px solid var(--accent2);}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid #6b3a31;}
+  .btn-sm{padding:6px 12px; font-size:13px; width:auto; border-radius:9px;}
+  .chip{
+    display:inline-flex; align-items:center; padding:3px 10px; border-radius:99px;
+    font-size:12px; background:var(--card2); color:var(--muted); border:1px solid var(--line);
+    white-space:nowrap;
+  }
+  .chip.on{background:var(--accent); color:#241505; border-color:var(--accent); font-weight:600;}
+  .chips{display:flex; gap:8px; flex-wrap:wrap;}
+  .badge{font-size:11px; padding:2px 8px; border-radius:99px; white-space:nowrap;}
+  .b-light{background:rgba(217,180,120,.15); color:#e0b878;}
+  .b-med{background:rgba(160,110,60,.25); color:#cf9a63;}
+  .b-dark{background:rgba(90,55,30,.4); color:#c9995f;}
+  .b-green{background:rgba(127,176,105,.15); color:var(--green);}
+  .b-red{background:rgba(212,123,106,.15); color:var(--red);}
+  .b-blue{background:rgba(122,165,196,.15); color:var(--blue);}
+  .muted{color:var(--muted); font-size:12px;}
+  .list-item{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; margin-bottom:10px; cursor:pointer;
+  }
+  .list-item:active{background:var(--card2);}
+  .li-title{font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .li-sub{font-size:12.5px; color:var(--muted); margin-top:4px; display:flex; gap:8px; flex-wrap:wrap;}
+  .empty{text-align:center; color:var(--muted); padding:30px 10px; font-size:14px;}
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0; z-index:20;
+    display:flex; background:rgba(22,17,13,.95); backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tab{
+    flex:1; padding:9px 0 7px; text-align:center; color:var(--muted); cursor:pointer;
+    font-size:11px; user-select:none;
+  }
+  .tab svg{display:block; margin:0 auto 2px; width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+  .tab.on{color:var(--accent); font-weight:600;}
+  .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:30; opacity:0; transition:opacity .2s; pointer-events:none;}
+  .backdrop.show{opacity:1; pointer-events:auto;}
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:31;
+    background:#1d1610; border-radius:20px 20px 0 0; border-top:1px solid var(--line);
+    padding:8px 16px calc(20px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto;
+    transform:translateY(100%); transition:transform .25s ease;
+    max-width:560px; margin:0 auto;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet-grab{width:38px; height:4px; border-radius:99px; background:var(--line); margin:4px auto 10px;}
+  .sheet h2{font-size:16px; margin:0 0 4px; display:flex; justify-content:space-between; align-items:center;}
+  .sheet h2 .close{color:var(--muted); font-size:22px; font-weight:400; padding:0 4px; cursor:pointer;}
+  .stars{display:flex; gap:4px; font-size:26px; cursor:pointer; user-select:none;}
+  .stars span{color:#4a3a2b;}
+  .stars span.on{color:var(--accent);}
+  .suggest{
+    background:rgba(212,160,94,.1); border:1px dashed var(--accent2);
+    border-radius:12px; padding:10px 12px; margin:12px 0 0; font-size:13px;
+  }
+  .suggest b{color:var(--accent);}
+  .timer-row{display:flex; gap:8px; align-items:center;}
+  .timer-row input{flex:1;}
+  .kv{display:flex; gap:14px; flex-wrap:wrap; font-size:13px;}
+  .kv b{font-weight:600;}
+  .head-actions{display:flex; gap:8px;}
+  .icon-btn{
+    width:34px; height:34px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); color:var(--accent); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fav{color:var(--accent); font-size:14px;}
+  .ai-box{background:rgba(122,165,196,.08); border:1px dashed #3d566b; border-radius:12px; padding:12px; margin-bottom:12px;}
+  .ai-status{font-size:13px; margin-top:8px;}
+  .ai-status.ok{color:var(--green);}
+  .ai-status.err{color:var(--red);}
+  .spin{display:inline-block; width:13px; height:13px; border:2px solid var(--accent2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:-2px; margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  hr{border:none; border-top:1px solid var(--line); margin:12px 0;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="pageTitle">冲煮</h1>
+    <div class="sub" id="pageSub"></div>
+  </div>
+  <div class="head-actions" id="headActions"></div>
+</header>
+<main id="main"></main>
+<nav class="tabbar" id="tabbar"></nav>
+<div class="backdrop" id="backdrop"></div>
+<div id="sheetRoot"></div>
+
+<script>
+/* ================= 数据层 ================= */
+const KEY = 'coffeeLog.v1';
+const ROASTS = ['浅焙','中浅焙','中焙','中深焙','深焙'];
+const METHODS = {
+  espresso: ['意式浓缩','双份浓缩','Ristretto','Lungo','美式'],
+  pneu:     ['气动浓缩','Ristretto','预浸慢萃','Lungo'],
+  pourover: ['手冲-三段式','手冲-一刀流','手冲-搅拌法','冰手冲'],
+  other:    ['自定义']
+};
+const DEFAULT_DEVICES = [
+  {id:'dev-semi', name:'半自动咖啡机', type:'espresso', grindHint:'内置磨豆机刻度', grinder:'内置磨豆机'},
+  {id:'dev-pneu', name:'气动咖啡机',   type:'pneu',     grindHint:'手摇磨刻度',     grinder:'手摇磨豆机'},
+  {id:'dev-v60',  name:'手冲滤杯',     type:'pourover', grindHint:'手摇磨刻度',     grinder:'手摇磨豆机'}
+];
+
+/* 判断是否为加压萃取（液重口径） */
+const isShot = t => t==='espresso' || t==='pneu' || t==='auto';
+const TYPE_LABELS = {espresso:'半自动意式', pneu:'气动咖啡机', auto:'全自动', pourover:'手冲', grinder:'磨豆机', other:'其他'};
+
+let db = load();
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if(d && d.beans && d.devices && d.brews){
+      migrate(d);
+      return d;
+    }
+  }catch(e){}
+  return {version:2, beans:[], brews:[], devices:DEFAULT_DEVICES.map(d=>({...d}))};
+}
+/* 旧版本数据迁移：换默认器具 id / 类型 */
+function migrate(d){
+  if(d.version >= 2) return;
+  const map = {'dev-espresso':'dev-semi','dev-auto':'dev-pneu','dev-hand':'dev-v60','dev-v60':'dev-v60'};
+  const hasNew = d.devices.some(x=>x.id==='dev-semi');
+  if(!hasNew) d.devices = d.devices.filter(x=>!['dev-espresso','dev-auto','dev-hand','dev-v60'].includes(x.id)).concat(DEFAULT_DEVICES.map(x=>({...x})));
+  d.brews.forEach(b=>{
+    if(map[b.deviceId]){ b.deviceId = map[b.deviceId]; }
+    if(b.deviceType==='auto'){ b.deviceType='pneu'; }
+  });
+  d.version = 2;
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ================= 工具 ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); };
+function daysSince(dateStr){ if(!dateStr) return null; return Math.max(0, Math.floor((Date.now()-new Date(dateStr+'T00:00:00'))/86400000)); }
+function fmtDate(s){ if(!s) return '—'; const d=new Date(s); return `${d.getMonth()+1}月${d.getDate()}日`; }
+function fmtDateFull(s){ if(!s) return '—'; const d=new Date(s); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
+function parseTime(str){ if(str==null||str==='') return null; str=String(str).trim(); if(str.includes(':')){ const p=str.split(':'); return (+p[0])*60+(+(p[1]||0)); } return Math.round(parseFloat(str)||0); }
+function fmtTime(sec){ if(sec==null) return '—'; const m=Math.floor(sec/60), s=Math.round(sec%60); return m>0? `${m}:${String(s).padStart(2,'0')}` : `${s}s`; }
+function roastBadge(r){ if(!r) return ''; const cls = (r==='浅焙'||r==='中浅焙')?'b-light':(r==='深焙')?'b-dark':'b-med'; return `<span class="badge ${cls}">${esc(r)}</span>`; }
+function ageBadge(roastDate){
+  const d = daysSince(roastDate); if(d==null) return '';
+  if(d<4)  return `<span class="badge b-blue">养豆中 ${d}天</span>`;
+  if(d<=30) return `<span class="badge b-green">风味期 ${d}天</span>`;
+  return `<span class="badge b-red">已${d}天</span>`;
+}
+function beanById(id){ return db.beans.find(b=>b.id===id); }
+function deviceById(id){ return db.devices.find(d=>d.id===id); }
+function stars(r){ let s=''; for(let i=1;i<=5;i++) s+=`<span class="${i<=r?'on':''}">★</span>`; return `<span class="stars" style="font-size:13px; pointer-events:none;">${s}</span>`; }
+
+/* 参数建议：同豆+同器具 > 同器具 > 同豆 */
+function suggestParams(beanId, deviceId){
+  const b = db.brews.filter(x=>x.beanId===beanId && x.deviceId===deviceId);
+  if(b.length) return {rec:b[0], tag:'同豆同器具'};
+  if(deviceId){ const d = db.brews.filter(x=>x.deviceId===deviceId); if(d.length) return {rec:d[0], tag:'同器具最近'}; }
+  if(beanId){  const c = db.brews.filter(x=>x.beanId===beanId); if(c.length) return {rec:c[0], tag:'同豆最近'}; }
+  return null;
+}
+function paramLine(r){
+  const parts=[];
+  if(r.grind) parts.push(`研磨 <b>${esc(r.grind)}</b>`);
+  if(r.dose) parts.push(`<b>${r.dose}g</b>`);
+  const w = r.yield || r.water; if(w) parts.push(`${isShot(r.deviceType)?'液重':'水'} <b>${w}g</b>`);
+  if(r.temp) parts.push(`<b>${r.temp}°C</b>`);
+  if(r.time!=null) parts.push(`<b>${fmtTime(r.time)}</b>`);
+  return parts.join(' · ') || '无参数';
+}
+
+/* ================= 页面框架 ================= */
+const TABS = [
+  {id:'home',  name:'冲煮', icon:'<svg viewBox="0 0 24 24"><path d="M4 9h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V9z"/><path d="M16 10h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M8 3c-1 1.5 1 2.5 0 4M12 3c-1 1.5 1 2.5 0 4"/></svg>'},
+  {id:'beans', name:'豆库', icon:'<svg viewBox="0 0 24 24"><path d="M5 19c8 2 14-3 14-12V5h-2C8 5 3 10 5 19z"/><path d="M5 19c3-6 7-9 12-11"/></svg>'},
+  {id:'params',name:'参数', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.02a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.02a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.02a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'},
+  {id:'settings', name:'设置', icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>'}
+];
+let currentTab = 'home';
+let beanFilter = 'open'; // open | done
+
+function renderTabbar(){
+  $('#tabbar').innerHTML = TABS.map(t=>`
+    <div class="tab ${t.id===currentTab?'on':''}" onclick="switchTab('${t.id}')">${t.icon}<div>${t.name}</div></div>
+  `).join('');
+}
+function switchTab(id){
+  currentTab = id;
+  const t = TABS.find(x=>x.id===id);
+  $('#pageTitle').textContent = t.name;
+  $('#headActions').innerHTML = id==='home' ? `<div class="icon-btn" onclick="openBrewForm()">＋</div>`
+    : id==='beans' ? `<div class="icon-btn" onclick="openBeanForm()">＋</div>` : '';
+  renderTabbar(); render();
+}
+function render(){
+  const m = $('#main');
+  const subs = {home:'记录每一次萃取', beans:`${db.beans.filter(b=>!b.done).length} 包在喝 · 共 ${db.beans.length} 包`, params:'每个组合的最佳配方', settings:'数据与器具管理'};
+  $('#pageSub').textContent = subs[currentTab]||'';
+  if(currentTab==='home') renderHome(m);
+  else if(currentTab==='beans') renderBeans(m);
+  else if(currentTab==='params') renderParams(m);
+  else renderSettings(m);
+}
+
+/* ================= 冲煮页 ================= */
+function renderHome(m){
+  const openBeans = db.beans.filter(b=>!b.done);
+  const recent = db.brews.slice(0,20);
+  let quick = `
+    <div class="card">
+      <h3>☕ 快速记录</h3>
+      <label>咖啡豆</label>
+      <select id="qBean">
+        <option value="">选择咖啡豆</option>
+        ${db.beans.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(b=>`<option value="${b.id}" ${b.done?'':''}>${esc(b.name)}${b.done?'（已喝完）':''}</option>`).join('')}
+      </select>
+      <label>器具</label>
+      <select id="qDevice">
+        <option value="">选择器具</option>
+        ${db.devices.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')}
+      </select>
+      <div id="qSuggest"></div>
+      <div style="margin-top:14px;">
+        <button class="btn" onclick="quickStart()">开始记录</button>
+      </div>
+    </div>`;
+  let list = recent.length ? recent.map(brewItem).join('') : `<div class="empty">${openBeans.length?'还没有冲煮记录，点右上角 ＋ 记录第一次':'先去「豆库」添加你的第一包咖啡豆吧'}</div>`;
+  m.innerHTML = quick + `<div class="chips" style="margin:2px 0 10px;"><span class="muted" style="align-self:center;">最近记录</span></div>` + list;
+  $('#qBean').addEventListener('change', updateQSuggest);
+  $('#qDevice').addEventListener('change', updateQSuggest);
+}
+function updateQSuggest(){
+  const el = $('#qSuggest'); if(!el) return;
+  const s = suggestParams($('#qBean').value, $('#qDevice').value);
+  el.innerHTML = s ? `<div class="suggest">💡 ${esc(s.tag)}上次：${paramLine(s.rec)}<br><span class="muted">${esc(s.rec.method||'')}</span></div>` : '';
+}
+function quickStart(){
+  const beanId = $('#qBean').value, deviceId = $('#qDevice').value;
+  openBrewForm(null, {beanId, deviceId});
+}
+function brewItem(r){
+  return `
+  <div class="list-item" onclick="openBrewForm('${r.id}')">
+    <div class="li-title">
+      ${r.fav?'<span class="fav">★</span>':''}
+      <span>${esc(r.beanName)}</span>
+      <span class="chip">${esc(r.deviceName)}</span>
+    </div>
+    <div class="li-sub">
+      <span>${esc(r.method||'')}</span>
+      ${r.grind?`<span>研磨 ${esc(r.grind)}</span>`:''}
+      ${r.dose?`<span>${r.dose}g</span>`:''}
+      ${r.time!=null?`<span>${fmtTime(r.time)}</span>`:''}
+      <span>${stars(r.rating)}</span>
+    </div>
+    <div class="muted" style="margin-top:3px;">${fmtDate(r.ts)}${r.notes?` · ${esc(r.notes)}`:''}</div>
+  </div>`;
+}
+
+/* ================= 豆库页 ================= */
+function renderBeans(m){
+  const list = db.beans.filter(b => beanFilter==='open' ? !b.done : b.done)
+    .sort((a,b)=>(b.purchaseDate||'').localeCompare(a.purchaseDate||''));
+  m.innerHTML = `
+    <div class="chips" style="margin-bottom:12px;">
+      <span class="chip ${beanFilter==='open'?'on':''}" onclick="setBeanFilter('open')">在喝</span>
+      <span class="chip ${beanFilter==='done'?'on':''}" onclick="setBeanFilter('done')">已喝完</span>
+    </div>
+    ${list.length ? list.map(b=>`
+      <div class="list-item" onclick="openBeanForm('${b.id}')">
+        <div class="li-title">${esc(b.name)} ${roastBadge(b.roast)} ${ageBadge(b.roastDate)}</div>
+        <div class="li-sub">
+          ${b.origin?`<span>🌍 ${esc(b.origin)}</span>`:''}
+          ${b.process?`<span>${esc(b.process)}</span>`:''}
+        </div>
+        <div class="li-sub">
+          <span>采购 ${fmtDate(b.purchaseDate)}</span>
+          <span>烘焙 ${fmtDate(b.roastDate)}</span>
+        </div>
+      </div>`).join('') : `<div class="empty">${beanFilter==='open'?'豆库是空的，点右上角 ＋ 添加':'还没有喝完的豆子'}</div>`}
+  `;
+}
+function setBeanFilter(f){ beanFilter=f; render(); }
+
+function openBeanForm(id){
+  const b = id ? beanById(id) : null;
+  openSheet(`
+    <h2>${b?'编辑咖啡豆':'添加咖啡豆'}<span class="close" onclick="closeSheet()">×</span></h2>
+    ${b?'':`
+    <div class="ai-box">
+      <div class="muted" style="margin-bottom:8px;">📷 拍下包装袋，AI 自动识别填写（需在「设置」配置 API Key）</div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="pickPhoto('camera')">拍照识别</button>
+        <button class="btn btn-ghost" onclick="pickPhoto('library')">相册选图</button>
+      </div>
+      <div id="ai-status"></div>
+      <img id="ai-preview" style="display:none;width:100%;border-radius:12px;margin-top:8px;max-height:200px;object-fit:contain;">
+    </div>
+    <hr>
+    <label>名称 *</label>
+    <input id="f-name" value="" placeholder="如：耶加雪菲 科契尔">`}
+    ${b?`<label>名称 *</label>
+    <input id="f-name" value="${esc(b.name)}" placeholder="如：耶加雪菲 科契尔">`:''}
+    <div class="row">
+      <div><label>产地</label><input id="f-origin" value="${esc(b?.origin||'')}" placeholder="埃塞俄比亚"></div>
+      <div><label>处理法</label><input id="f-process" value="${esc(b?.process||'')}" placeholder="水洗"></div>
+    </div>
+    <div class="row">
+      <div>
+        <label>烘焙度</label>
+        <select id="f-roast"><option value="">选择</option>${ROASTS.map(r=>`<option ${b?.roast===r?'selected':''}>${r}</option>`).join('')}</select>
+      </div>
+      <div><label>价格(¥，选填)</label><input id="f-price" type="number" inputmode="decimal" value="${b?.price??''}"></div>
+    </div>
+    <div class="row">
+      <div><label>烘焙日期</label><input id="f-roastDate" type="date" value="${b?.roastDate||''}"></div>
+      <div><label>采购日期</label><input id="f-purchaseDate" type="date" value="${b?.purchaseDate||''}"></div>
+    </div>
+    <label>备注</label>
+    <textarea id="f-notes" placeholder="风味描述、商家等">${esc(b?.notes||'')}</textarea>
+    <label>状态</label>
+    <div class="chips" id="f-done">${b?.done?'<span class="chip on" data-v="1" onclick="this.parentNode.querySelectorAll(\'.chip\').forEach(c=>c.classList.remove(\'on\'));this.classList.add(\'on\')">已喝完</span><span class="chip" data-v="0" onclick="this.parentNode.querySelectorAll(\'.chip\').forEach(c=>c.classList.remove(\'on\'));this.classList.add(\'on\')">在喝</span>':'<span class="chip" data-v="0" onclick="this.parentNode.querySelectorAll(\'.chip\').forEach(c=>c.classList.remove(\'on\'));this.classList.add(\'on\')">在喝</span><span class="chip" data-v="1" onclick="this.parentNode.querySelectorAll(\'.chip\').forEach(c=>c.classList.remove(\'on\'));this.classList.add(\'on\')">已喝完</span>'}</div>
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      ${b?`<button class="btn btn-danger" style="flex:0 0 auto;" onclick="deleteBean('${b.id}')">删除</button>`:''}
+      <button class="btn" onclick="saveBean('${id||''}')">保存</button>
+    </div>
+  `);
+}
+function saveBean(id){
+  const name = $('#f-name').value.trim();
+  if(!name){ alert('请填写名称'); return; }
+  const doneChip = document.querySelector('#f-done .chip.on');
+  const data = {
+    name, origin:$('#f-origin').value.trim(), process:$('#f-process').value.trim(),
+    roast:$('#f-roast').value, price:$('#f-price').value?+$('#f-price').value:null,
+    roastDate:$('#f-roastDate').value||null, purchaseDate:$('#f-purchaseDate').value||null,
+    notes:$('#f-notes').value.trim(), done: doneChip ? doneChip.dataset.v==='1' : false
+  };
+  if(id){ Object.assign(beanById(id), data); } else { db.beans.push({id:uid(), ...data}); }
+  save(); closeSheet(); render();
+}
+function deleteBean(id){
+  if(!confirm('删除这包豆子？冲煮记录会保留。')) return;
+  db.beans = db.beans.filter(b=>b.id!==id);
+  save(); closeSheet(); render();
+}
+
+/* ================= 冲煮表单 ================= */
+let editingBrew = null;
+function openBrewForm(id, preset){
+  editingBrew = id ? db.brews.find(b=>b.id===id) : null;
+  const r = editingBrew;
+  const beanId = r?.beanId || preset?.beanId || (db.beans.find(b=>!b.done)?.id ?? '');
+  const deviceId = r?.deviceId || preset?.deviceId || '';
+  const dev = deviceById(deviceId);
+  const isEspresso = isShot(dev?.type);
+  const yieldLabel = isEspresso ? '液重 (g)' : '注水量 (g)';
+  const beansSel = db.beans.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+  openSheet(`
+    <h2>${r?'编辑冲煮记录':'记录冲煮'}<span class="close" onclick="closeSheet()">×</span></h2>
+    <label>时间</label>
+    <input id="b-ts" type="datetime-local" value="${r? r.ts.slice(0,16) : todayStr()}">
+    <div class="row">
+      <div>
+        <label>咖啡豆</label>
+        <select id="b-bean" onchange="updateBrewSuggest()">${beansSel.map(b=>`<option value="${b.id}" ${b.id===beanId?'selected':''}>${esc(b.name)}${b.done?'（完）':''}</option>`).join('')}</select>
+      </div>
+      <div>
+        <label>器具</label>
+        <select id="b-device" onchange="onDeviceChange();updateBrewSuggest()">${db.devices.map(d=>`<option value="${d.id}" ${d.id===deviceId?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div id="b-suggest"></div>
+    <div class="row">
+      <div>
+        <label>萃取方式</label>
+        <input id="b-method" list="methodList" value="${esc(r?.method||'')}" placeholder="选填或自定义">
+        <datalist id="methodList"></datalist>
+      </div>
+      <div>
+        <label>研磨度</label>
+        <input id="b-grind" value="${esc(r?.grind||'')}" placeholder="${esc(dev?.grindHint||'如 18格')}">
+      </div>
+    </div>
+    <div class="row">
+      <div><label>粉量 (g)</label><input id="b-dose" type="number" inputmode="decimal" value="${r?.dose??''}"></div>
+      <div><label id="b-yieldLabel">${yieldLabel}</label><input id="b-yield" type="number" inputmode="decimal" value="${r?.yield??r?.water??''}"></div>
+      <div><label>水温 (°C)</label><input id="b-temp" type="number" inputmode="numeric" value="${r?.temp??''}"></div>
+    </div>
+    <label>萃取时间</label>
+    <div class="timer-row">
+      <input id="b-time" inputmode="numeric" placeholder="25 或 1:45" value="${r?.time!=null?(r.time>=60?fmtTime(r.time):r.time):''}">
+      <button class="btn btn-ghost btn-sm" id="b-timerBtn" onclick="toggleTimer()">计时</button>
+    </div>
+    <label>评分</label>
+    <div class="stars" id="b-stars" onclick="clickStar(event)">
+      ${[1,2,3,4,5].map(i=>`<span class="${i<=(r?.rating||0)?'on':''}" data-v="${i}">★</span>`).join('')}
+    </div>
+    <label>备注</label>
+    <textarea id="b-notes" placeholder="风味、问题、调整方向…">${esc(r?.notes||'')}</textarea>
+    <label>⭐ 收藏这条配方</label>
+    <div class="chips" id="b-fav">
+      <span class="chip ${r?.fav?'on':''}" data-v="1" onclick="this.classList.add('on');this.nextElementSibling.classList.remove('on')">收藏</span>
+      <span class="chip ${!r?.fav?'on':''}" data-v="0" onclick="this.classList.add('on');this.previousElementSibling.classList.remove('on')">普通</span>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      ${r?`<button class="btn btn-danger" style="flex:0 0 auto;" onclick="deleteBrew('${r.id}')">删除</button>`:''}
+      <button class="btn" onclick="saveBrew()">保存</button>
+    </div>
+  `);
+  onDeviceChange(true);
+  updateBrewSuggest();
+}
+function onDeviceChange(keep){
+  const dev = deviceById($('#b-device').value);
+  const isE = isShot(dev?.type);
+  $('#b-yieldLabel').textContent = isE ? '液重 (g)' : '注水量 (g)';
+  $('#methodList').innerHTML = (METHODS[dev?.type]||METHODS.other).map(m=>`<option value="${m}">`).join('');
+  const g = $('#b-grind'); if(!keep){ g.value=''; g.placeholder = dev?.grindHint||'如 18格'; }
+}
+function updateBrewSuggest(){
+  const el = $('#b-suggest'); if(!el) return;
+  const s = suggestParams($('#b-bean').value, $('#b-device').value);
+  el.innerHTML = s ? `
+    <div class="suggest">💡 ${esc(s.tag)}上次：${paramLine(s.rec)}<br>
+    <span class="muted">${esc(s.rec.method||'')} · ${fmtDate(s.rec.ts)}</span><br>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick='fillFromSuggest(${JSON.stringify(JSON.stringify(s.rec))})'>按上次填入</button></div>` : '';
+}
+function fillFromSuggest(json){
+  const s = JSON.parse(json);
+  $('#b-method').value = s.method||'';
+  $('#b-grind').value = s.grind||'';
+  $('#b-dose').value = s.dose??'';
+  $('#b-yield').value = s.yield??s.water??'';
+  $('#b-temp').value = s.temp??'';
+  $('#b-time').value = s.time!=null?(s.time>=60?fmtTime(s.time):s.time):'';
+}
+function clickStar(e){
+  const t = e.target; if(t.tagName!=='SPAN') return;
+  const v = +t.dataset.v, cur = +($('#b-stars .on:last-of-type')?.dataset.v||0);
+  const val = v===cur ? v-1 : v;
+  $('#b-stars').querySelectorAll('span').forEach(s=>s.classList.toggle('on', +s.dataset.v<=val));
+}
+function saveBrew(){
+  const bean = beanById($('#b-bean').value), dev = deviceById($('#b-device').value);
+  if(!bean || !dev){ alert('请选择咖啡豆和器具'); return; }
+  const data = {
+    ts: new Date($('#b-ts').value||Date.now()).toISOString(),
+    beanId:bean.id, beanName:bean.name, deviceId:dev.id, deviceName:dev.name, deviceType:dev.type,
+    method:$('#b-method').value.trim(), grind:$('#b-grind').value.trim(),
+    dose:$('#b-dose').value?+$('#b-dose').value:null,
+    yield:$('#b-yield').value?+$('#b-yield').value:null,
+    temp:$('#b-temp').value?+$('#b-temp').value:null,
+    time:parseTime($('#b-time').value),
+    rating:+($('#b-stars .on:last-of-type')?.dataset.v||0),
+    notes:$('#b-notes').value.trim(),
+    fav:document.querySelector('#b-fav .chip.on').dataset.v==='1'
+  };
+  if(editingBrew){ Object.assign(editingBrew, data); } else { db.brews.unshift({id:uid(), ...data}); }
+  db.brews.sort((a,b)=>b.ts.localeCompare(a.ts));
+  save(); closeSheet(); render();
+}
+function deleteBrew(id){
+  if(!confirm('删除这条冲煮记录？')) return;
+  db.brews = db.brews.filter(b=>b.id!==id);
+  save(); closeSheet(); render();
+}
+
+/* 计时器 */
+let timerInt = null, timerSec = 0;
+function toggleTimer(){
+  const btn = $('#b-timerBtn'), input = $('#b-time');
+  if(timerInt){ clearInterval(timerInt); timerInt=null; btn.textContent='计时'; input.value = timerSec>=60?fmtTime(timerSec):timerSec; return; }
+  timerSec = parseTime(input.value)||0;
+  btn.textContent = '停止'; input.value = fmtTime(timerSec);
+  timerInt = setInterval(()=>{ timerSec++; input.value = fmtTime(timerSec); },1000);
+}
+
+/* ================= 参数速查页 ================= */
+function renderParams(m){
+  const favs = db.brews.filter(b=>b.fav);
+  const groups = {};
+  db.brews.forEach(b=>{
+    const key = b.beanId+'|'+b.deviceId;
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(b);
+  });
+  let cards = '';
+  if(favs.length){
+    cards += `<div class="muted" style="margin:2px 0 8px;">⭐ 收藏配方</div>` + favs.map(r=>recipeCard(r,'收藏')).join('');
+  }
+  const keys = Object.keys(groups);
+  if(keys.length){
+    cards += `<div class="muted" style="margin:14px 0 8px;">最佳配方（按评分）</div>`;
+    cards += keys.map(k=>{
+      const arr = groups[k];
+      const best = arr.reduce((a,b)=> (b.rating>a.rating) || (b.rating===a.rating && b.ts>a.ts) ? b : a);
+      return recipeCard(best, `共${arr.length}次`, best.rating>0);
+    }).join('');
+  }
+  m.innerHTML = cards || `<div class="empty">还没有数据。多记录几次冲煮，这里会自动汇总出「这包豆 × 这台器具」的最佳研磨度和配方。</div>`;
+}
+function recipeCard(r, tag, isBest){
+  const ratio = r.dose && r.yield ? `1:${(r.yield/r.dose).toFixed(1)}` : '';
+  return `
+  <div class="card" onclick="openBrewForm('${r.id}')">
+    <div class="li-title">${esc(r.beanName)} <span class="chip">${esc(r.deviceName)}</span>
+      ${isBest?'<span class="badge b-green">最佳</span>':''}
+      <span style="margin-left:auto;font-size:12px;color:var(--muted);">${esc(tag)}</span>
+    </div>
+    <div class="kv" style="margin-top:8px;">
+      ${r.grind?`<span>研磨 <b>${esc(r.grind)}</b></span>`:''}
+      ${r.method?`<span>${esc(r.method)}</span>`:''}
+      ${r.dose?`<span>粉 <b>${r.dose}g</b></span>`:''}
+      ${r.yield?`<span>${isShot(r.deviceType)?'液':'水'} <b>${r.yield}g</b></span>`:''}
+      ${ratio?`<span>${ratio}</span>`:''}
+      ${r.temp?`<span><b>${r.temp}°C</b></span>`:''}
+      ${r.time!=null?`<span><b>${fmtTime(r.time)}</b></span>`:''}
+    </div>
+    <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+      ${stars(r.rating)}<span class="muted">${fmtDateFull(r.ts.slice(0,10))}</span>
+    </div>
+  </div>`;
+}
+
+/* ================= 拍照识别（AI） ================= */
+const AI_KEY = 'coffeeLog.ai';
+let AI_CFG = loadAICfg();
+function loadAICfg(){
+  try{ return JSON.parse(localStorage.getItem(AI_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveAICfg(){
+  AI_CFG = {
+    base: $('#ai-base').value.trim().replace(/\/+$/,''),
+    key:  $('#ai-key').value.trim(),
+    model:$('#ai-model').value.trim()
+  };
+  localStorage.setItem(AI_KEY, JSON.stringify(AI_CFG));
+  const el = $('#ai-test-status');
+  if(el){ el.className='ai-status'; el.textContent='✓ 配置已保存到本机'; }
+}
+function aiCfgOk(){ return AI_CFG.base && AI_CFG.key && AI_CFG.model; }
+
+function pickPhoto(mode){
+  if(!aiCfgOk()){ alert('请先到「设置」配置 AI 的 Base URL / Key / 模型名'); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.capture = mode==='camera' ? 'environment' : undefined;
+  inp.onchange = () => { if(inp.files[0]) recognizeBean(inp.files[0]); };
+  inp.click();
+}
+
+/* 压缩图片到长边 1280，转 base64（省流量、加快识别） */
+function compressImage(file, cb){
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    cb(c.toDataURL('image/jpeg', 0.85));
+    URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function aiStatus(html, cls){
+  const el = $('#ai-status') || $('#ai-test-status');
+  if(!el){ if(cls==='err') alert(html); return; }
+  el.className = 'ai-status ' + (cls||'');
+  el.innerHTML = html;
+}
+
+async function recognizeBean(file){
+  const status = msg => aiStatus(`<span class="spin"></span>${msg}`);
+  status('处理图片…');
+  const prev = $('#ai-preview');
+  if(prev){ prev.src = URL.createObjectURL(file); prev.style.display='block'; }
+  compressImage(file, async (b64) => {
+    status('识别中…');
+    try{
+      const res = await callVision(b64);
+      fillBeanForm(res);
+      aiStatus('✅ 识别完成，请核对后保存（识别结果仅供参考）', 'ok');
+    }catch(e){
+      aiStatus('❌ ' + esc(e.message), 'err');
+    }
+  });
+}
+
+/* 调用 OpenAI 兼容视觉接口，返回结构化 JSON */
+async function callVision(b64){
+  const prompt = `你是咖啡豆信息提取助手。请从这张咖啡豆包装照片中提取信息，严格输出 JSON（不要 markdown 代码块）：
+{"name":"豆名或产品名","origin":"产地(国家/产区)","process":"处理法","roast":"烘焙度","roastDate":"YYYY-MM-DD 或空","notes":"包装上的风味描述"}
+烘焙度必须是以下之一：浅焙/中浅焙/中焙/中深焙/深焙，无法判断时填中焙。照片上没有的字段填空字符串。`;
+  const body = {
+    model: AI_CFG.model,
+    messages: [{
+      role: 'user',
+      content: [
+        {type:'text', text: prompt},
+        {type:'image_url', image_url:{url: b64}}
+      ]
+    }],
+    temperature: 0.1
+  };
+  const resp = await fetch(AI_CFG.base + '/chat/completions', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'Authorization': 'Bearer ' + AI_CFG.key},
+    body: JSON.stringify(body)
+  });
+  if(!resp.ok){
+    const t = await resp.text().catch(()=> '');
+    throw new Error(`接口错误 ${resp.status}：${t.slice(0,120)}`);
+  }
+  const data = await resp.json();
+  let txt = data.choices?.[0]?.message?.content || '';
+  txt = txt.replace(/```json|```/g, '').trim();
+  const m = txt.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error('AI 返回格式异常：' + txt.slice(0,120));
+  try{ return JSON.parse(m[0]); }catch(e){ throw new Error('JSON 解析失败'); }
+}
+
+function fillBeanForm(r){
+  const set = (id, v) => { const el = $(id); if(el && v) el.value = v; };
+  set('#f-name', r.name);
+  set('#f-origin', r.origin);
+  set('#f-process', r.process);
+  if(r.roast && ROASTS.includes(r.roast)) $('#f-roast').value = r.roast;
+  if(r.roastDate && /^\d{4}-\d{2}-\d{2}$/.test(r.roastDate)) $('#f-roastDate').value = r.roastDate;
+  set('#f-notes', r.notes);
+}
+
+async function testAI(){
+  saveAICfg();
+  if(!aiCfgOk()){ aiStatus('请先填完 Base URL / Key / 模型名', 'err'); return; }
+  const btn = event?.target;
+  if(btn){ btn.disabled = true; }
+  aiStatus('<span class="spin"></span>测试中…');
+  try{
+    const resp = await fetch(AI_CFG.base + '/models', {
+      headers: {'Authorization': 'Bearer ' + AI_CFG.key}
+    });
+    if(resp.ok){ aiStatus('✅ 连接成功', 'ok'); }
+    else if(resp.status === 404 || resp.status === 405){
+      // 部分网关不提供 /models（如智谱），改测一次对话补全
+      const r2 = await fetch(AI_CFG.base + '/chat/completions', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+AI_CFG.key},
+        body: JSON.stringify({model:AI_CFG.model, messages:[{role:'user',content:'hi'}], max_tokens:4})
+      });
+      if(r2.ok) aiStatus('✅ 连接成功，模型可正常调用', 'ok');
+      else{
+        const t = await r2.text().catch(()=> '');
+        aiStatus('❌ 错误 ' + r2.status + '：' + esc(t.slice(0,150)), 'err');
+      }
+    }
+    else if(resp.status === 401) aiStatus('❌ 401：Key 无效或已失效', 'err');
+    else aiStatus('❌ 错误 ' + resp.status + '（检查 Base URL / Key）', 'err');
+  }catch(e){ aiStatus('❌ 网络错误：' + esc(e.message), 'err'); }
+  finally{ if(btn){ btn.disabled = false; } }
+}
+
+/* ================= 设置页 ================= */
+function renderSettings(m){
+  const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  m.innerHTML = `
+    <div class="card">
+      <h3>📱 安装到主屏幕</h3>
+      ${standalone ? '<div class="muted">✅ 已经作为独立应用运行</div>' : `
+      <div class="muted" style="line-height:1.8;">
+        iPhone：<b>Safari</b> 打开本页面 → 底部「分享」按钮 → 「添加到主屏幕」<br>
+        添加后从主屏幕图标启动，即可全屏离线使用。
+      </div>`}
+    </div>
+    <div class="card">
+      <h3>📷 拍照识别（AI）</h3>
+      <div class="muted" style="margin-bottom:10px;">拍咖啡豆包装自动填写豆子信息。使用 OpenAI 兼容接口（如 DeepSeek、通义、Kimi、OpenAI 等）。Key 只保存在本机。</div>
+      <label>API Base URL</label>
+      <input id="ai-base" placeholder="https://api.deepseek.com/v1" value="${esc(AI_CFG.base||'')}">
+      <label>API Key</label>
+      <input id="ai-key" type="password" placeholder="sk-..." value="${esc(AI_CFG.key||'')}">
+      <label>视觉模型名</label>
+      <input id="ai-model" placeholder="如 qwen-vl-plus / gpt-4o-mini / glm-4v-flash" value="${esc(AI_CFG.model||'')}">
+      <div style="margin-top:12px;" class="row">
+        <button class="btn btn-ghost" onclick="saveAICfg()">保存配置</button>
+        <button class="btn btn-ghost" onclick="testAI()">测试连接</button>
+      </div>
+      <div id="ai-test-status" class="ai-status"></div>
+    </div>
+    <div class="card">
+      <h3>⚙️ 器具管理</h3>
+      ${db.devices.map(d=>`
+        <div class="list-item" style="margin-bottom:8px;" onclick="openDeviceForm('${d.id}')">
+          <div class="li-title">${esc(d.name)}<span class="chip">${TYPE_LABELS[d.type]||d.type}</span></div>
+          <div class="li-sub">${esc(d.grinder||'')} · 研磨提示：${esc(d.grindHint||'—')}</div>
+        </div>`).join('')}
+      <button class="btn btn-ghost" onclick="openDeviceForm()">＋ 添加器具</button>
+    </div>
+    <div class="card">
+      <h3>💾 数据备份</h3>
+      <div class="muted" style="margin-bottom:10px;">数据保存在本机浏览器。换手机或清缓存前请先导出。</div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="exportData()">导出备份</button>
+        <button class="btn btn-ghost" onclick="$('#importFile').click()">导入备份</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+    </div>
+    <div class="card">
+      <h3>🧪 示例数据</h3>
+      <button class="btn btn-ghost" onclick="loadDemo()">载入示例数据</button>
+    </div>
+    <div class="muted" style="text-align:center;padding:6px 0 20px;">咖啡手账 · 本地存储 · 无需联网</div>
+  `;
+}
+function openDeviceForm(id){
+  const d = id ? deviceById(id) : null;
+  openSheet(`
+    <h2>${d?'编辑器具':'添加器具'}<span class="close" onclick="closeSheet()">×</span></h2>
+    <label>名称 *</label>
+    <input id="d-name" value="${esc(d?.name||'')}" placeholder="如：V60 滤杯">
+    <label>类型</label>
+    <select id="d-type">
+      ${Object.entries(TYPE_LABELS).map(([v,n])=>`<option value="${v}" ${d?.type===v?'selected':''}>${n}</option>`).join('')}
+    </select>
+    <label>磨豆机</label>
+    <input id="d-grinder" value="${esc(d?.grinder||'')}" placeholder="如：内置磨豆机 / 手摇磨">
+    <label>研磨度提示</label>
+    <input id="d-hint" value="${esc(d?.grindHint||'')}" placeholder="如：刻度 1-30 / 格数">
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      ${d?`<button class="btn btn-danger" style="flex:0 0 auto;" onclick="deleteDevice('${d.id}')">删除</button>`:''}
+      <button class="btn" onclick="saveDevice('${id||''}')">保存</button>
+    </div>
+  `);
+}
+function saveDevice(id){
+  const name = $('#d-name').value.trim();
+  if(!name){ alert('请填写名称'); return; }
+  const data = {name, type:$('#d-type').value, grinder:$('#d-grinder').value.trim(), grindHint:$('#d-hint').value.trim()};
+  if(id){ Object.assign(deviceById(id), data); } else { db.devices.push({id:uid(), ...data}); }
+  save(); closeSheet(); render();
+}
+function deleteDevice(id){
+  if(!confirm('删除这个器具？冲煮记录会保留名称。')) return;
+  db.devices = db.devices.filter(d=>d.id!==id);
+  save(); closeSheet(); render();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `咖啡手账备份-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importData(input){
+  const f = input.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const d = JSON.parse(reader.result);
+      if(!d.beans || !d.brews || !d.devices) throw 0;
+      if(confirm(`导入 ${d.beans.length} 包豆、${d.brews.length} 条冲煮记录？将覆盖当前数据。`)){
+        db = d; save(); render();
+      }
+    }catch(e){ alert('文件格式不正确'); }
+  };
+  reader.readAsText(f);
+  input.value='';
+}
+function loadDemo(){
+  if(!confirm('载入示例数据？会覆盖当前数据。')) return;
+  const bid1=uid(), bid2=uid();
+  db = {
+    version:1,
+    beans:[
+      {id:bid1, name:'耶加雪菲 科契尔', origin:'埃塞俄比亚', process:'水洗', roast:'浅焙', roastDate:'2026-09-28', purchaseDate:'2026-10-02', price:68, notes:'茉莉花、柑橘、蜜桃', done:false},
+      {id:bid2, name:'曼特宁 湿刨法', origin:'苏门答腊', process:'湿刨', roast:'中深焙', roastDate:'2026-09-15', purchaseDate:'2026-09-20', price:55, notes:'草本、黑巧、醇厚', done:false}
+    ],
+    brews:[
+      {id:uid(), ts:'2026-10-08T08:30:00.000Z', beanId:bid1, beanName:'耶加雪菲 科契尔', deviceId:'dev-semi', deviceName:'半自动咖啡机', deviceType:'espresso', method:'意式浓缩', grind:'内置磨 刻度 8', dose:18, yield:36, temp:93, time:27, rating:4, notes:'流速正常，酸甜平衡', fav:false},
+      {id:uid(), ts:'2026-10-09T09:10:00.000Z', beanId:bid1, beanName:'耶加雪菲 科契尔', deviceId:'dev-v60', deviceName:'手冲滤杯', deviceType:'pourover', method:'手冲-三段式', grind:'手摇磨 22格', dose:15, yield:240, temp:92, time:145, rating:5, notes:'花香明显，试试 93°C', fav:true},
+      {id:uid(), ts:'2026-10-10T07:50:00.000Z', beanId:bid2, beanName:'曼特宁 湿刨法', deviceId:'dev-pneu', deviceName:'气动咖啡机', deviceType:'pneu', method:'气动浓缩', grind:'手摇磨 10格', dose:15, yield:40, temp:92, time:35, rating:4, notes:'body 厚，油脂不错', fav:false}
+    ],
+    devices: db.devices
+  };
+  save(); switchTab('home');
+}
+
+/* ================= 弹层 ================= */
+function openSheet(html){
+  $('#sheetRoot').innerHTML = `<div class="sheet" id="sheet"><div class="sheet-grab"></div>${html}</div>`;
+  requestAnimationFrame(()=>{ $('#sheet').classList.add('show'); $('#backdrop').classList.add('show'); });
+  $('#backdrop').onclick = closeSheet;
+}
+function closeSheet(){
+  if(timerInt){ clearInterval(timerInt); timerInt=null; }
+  const s = $('#sheet');
+  if(s){ s.classList.remove('show'); setTimeout(()=>{ $('#sheetRoot').innerHTML=''; },250); }
+  $('#backdrop').classList.remove('show');
+}
+
+/* ================= 启动 ================= */
+switchTab('home');
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
